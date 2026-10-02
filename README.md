@@ -1,6 +1,6 @@
 # pwcheck
 
-This is an in depth description of the pwcheck (password checker). See other README for easy step by step tutorial to perform on your own machine. 
+This is an in depth description of the pwcheck (password checker). See GETTING_STARTED for easy step by step tutorial to perform on your own machine. 
 A command-line password strength checker that scores passwords by **entropy** and checks whether they've appeared in known data breaches using the **HaveIBeenPwned k-anonymity API**, without ever sending your password (or its full hash) anywhere.
 
 Standard library only. No dependencies.

@@ -1,0 +1,2 @@
+[console_scripts]
+pwcheck = pwcheck.cli:main

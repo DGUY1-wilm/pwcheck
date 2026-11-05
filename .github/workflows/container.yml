@@ -1,0 +1,103 @@
+name: Container
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # Weekly, Monday 09:43 UTC. The base image collects new CVEs over time even
+    # if nothing in this repo changes.
+    - cron: "43 9 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  IMAGE: pwcheck:ci
+  TRIVY_VERSION: "0.76.1"
+  # SHA-256 of trivy_0.76.1_Linux-64bit.tar.gz, from the release's checksums file.
+  TRIVY_SHA256: "c7cbe3137fb8a48a17574bede3dd6beb16742d1e9772929940fc90082c39d9c0"
+
+jobs:
+  build-and-scan:
+    name: Build & scan image
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write # upload Trivy SARIF to the Security tab
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Build image
+        run: docker build --pull --tag "$IMAGE" .
+
+      # Prove the image works and is hardened, not just that it builds.
+      - name: Smoke test
+        run: |
+          # Same restrictions you'd use in production: read-only filesystem,
+          # no Linux capabilities, no privilege escalation.
+          run() { docker run --rm -i --read-only --cap-drop ALL \
+                    --security-opt no-new-privileges "$IMAGE" "$@"; }
+
+          set +e
+          echo 'password' | run --stdin --no-network; weak=$?
+          echo 't7#Kq!9vLm2$Xr8Zp4@w' | run --stdin --no-network; strong=$?
+          set -e
+          echo "weak exit=$weak  strong exit=$strong"
+          test "$weak" -eq 1 && test "$strong" -eq 0
+
+          uid=$(docker run --rm --entrypoint id "$IMAGE" -u)
+          echo "runs as uid $uid"
+          test "$uid" = "10001"
+
+          if docker run --rm --entrypoint python "$IMAGE" -m pip --version; then
+            echo "pip should not be in the runtime image"; exit 1
+          fi
+
+          docker image ls "$IMAGE" --format 'Image size: {{.Size}}' | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Install Trivy (checksum-verified)
+        run: |
+          tarball="trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
+          curl -sSfL -o "$tarball" \
+            "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/${tarball}"
+          echo "${TRIVY_SHA256}  ${tarball}" | sha256sum --check --strict
+          tar -xzf "$tarball" trivy
+          ./trivy --version
+
+      # Misconfigurations in the Dockerfile itself (running as root, etc.).
+      - name: Scan Dockerfile (Trivy config)
+        run: ./trivy config --exit-code 1 --severity HIGH,CRITICAL .
+
+      # Report first, so the Security tab is updated even when the gate fails.
+      # --ignore-unfixed: only CVEs that have a patched package. Unfixed ones
+      # can't be resolved by us, so they'd only make the build permanently red.
+      - name: Scan image (SARIF report)
+        run: |
+          ./trivy image --severity HIGH,CRITICAL --ignore-unfixed \
+            --format sarif --output trivy-image.sarif "$IMAGE"
+
+      - name: Upload Trivy results to code scanning
+        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: trivy-image.sarif
+          category: trivy-image
+
+      - name: Gate on fixable HIGH/CRITICAL vulnerabilities
+        run: |
+          ./trivy image --exit-code 1 --severity HIGH,CRITICAL --ignore-unfixed \
+            --format table "$IMAGE"
+
+      # Informational: what's still open upstream (no fix yet). Never fails.
+      - name: List unfixed HIGH/CRITICAL (informational)
+        if: always()
+        run: ./trivy image --severity HIGH,CRITICAL --format table "$IMAGE" || true

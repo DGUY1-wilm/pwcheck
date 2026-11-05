@@ -10,15 +10,18 @@ How it works
 The password, and its full hash, never leave the machine.
 Docs: https://haveibeenpwned.com/API/v3#PwnedPasswords
 """
+
 from __future__ import annotations
 
 import hashlib
+import re
 import urllib.error
 import urllib.request
-from typing import Callable
+from collections.abc import Callable
 
 API_URL = "https://api.pwnedpasswords.com/range/"
 USER_AGENT = "pwcheck-educational-tool"
+_PREFIX_RE = re.compile(r"[0-9A-F]{5}")
 
 
 class HIBPError(RuntimeError):
@@ -27,14 +30,19 @@ class HIBPError(RuntimeError):
 
 def split_hash(password: str) -> tuple[str, str]:
     """Return (5-char prefix, 35-char suffix) of the uppercase SHA-1 hex digest."""
-    # SHA-1 is required by the HIBP API; it is not used here for security.
-    digest = hashlib.sha1(password.encode("utf-8")).hexdigest().upper()  # noqa: S324
+    # SHA-1 is required by the HIBP API. It is a lookup key here, not a security control,
+    # so we say so explicitly; scanners (ruff S324 / Bandit B324) accept this flag.
+    digest = hashlib.sha1(password.encode("utf-8"), usedforsecurity=False).hexdigest().upper()
     return digest[:5], digest[5:]
 
 
 def fetch_range(prefix: str, timeout: float = 5.0) -> str:
     """Fetch the raw range response body for a 5-character hash prefix."""
-    req = urllib.request.Request(
+    # Validate input before building a URL: only 5 hex characters may ever be sent.
+    if not _PREFIX_RE.fullmatch(prefix):
+        raise ValueError(f"prefix must be 5 hex characters, got {prefix!r}")
+    # API_URL is a hard-coded https:// constant, so file:// or custom schemes can't reach urlopen.
+    req = urllib.request.Request(  # noqa: S310
         API_URL + prefix,
         headers={
             "User-Agent": USER_AGENT,
@@ -44,7 +52,8 @@ def fetch_range(prefix: str, timeout: float = 5.0) -> str:
     )
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310
-            return resp.read().decode("utf-8")
+            body: bytes = resp.read()
+            return body.decode("utf-8")
     except (urllib.error.URLError, TimeoutError) as exc:
         raise HIBPError(f"Could not reach HIBP API: {exc}") from exc
 

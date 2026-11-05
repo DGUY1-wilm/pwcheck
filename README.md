@@ -9,7 +9,10 @@
 
 A command-line password strength checker that scores passwords by **entropy** and checks whether they've appeared in known data breaches using the **HaveIBeenPwned k-anonymity API**, without ever sending your password (or its full hash) anywhere.
 
-Standard library only. No runtime dependencies. New to the command line? See [GETTING_STARTED.md](GETTING_STARTED.md) for a step-by-step guide.
+Standard library only. No runtime dependencies.
+
+- **New to the command line, or want to build a pipeline like this yourself?** See [GETTING_STARTED.md](GETTING_STARTED.md): part 1 runs pwcheck, part 2 is a plain-language walkthrough of all six build stages.
+- **How AI was used:** this project was built with an AI assistant; [AI_USAGE.md](AI_USAGE.md) documents who did what, including mistakes.
 
 The project is also a working **DevSecOps pipeline**: every change is linted, type-checked, tested, scanned by six security tools and container-scanned before it can merge, and releases are published as signed, verifiable container images. See [CI/CD & Security](#cicd--security).
 

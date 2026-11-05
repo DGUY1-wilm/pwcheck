@@ -10,3 +10,6 @@ coverage.xml
 htmlcov/
 .mypy_cache/
 .ruff_cache/
+
+# Files downloaded from Claude land here; never commit them
+Claude outputs/

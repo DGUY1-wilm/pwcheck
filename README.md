@@ -166,12 +166,4 @@ zizmor .github/
 
 Tests never touch the real API. `pwned_count` takes an injectable `fetch` function, and `fetch_range` is tested against a fake `urlopen`. Tests assert that only the 5-character prefix is ever sent, and that `fetch_range` rejects anything that isn't exactly 5 hex characters.
 
-## Roadmap ideas
-- [ ] Dictionary-word and leetspeak detection (or integrate `zxcvbn`)
-- [ ] Passphrase mode (Diceware word-count entropy)
-- [ ] Batch mode for auditing a password-manager export (locally)
-- [ ] Optional local HIBP hash file for fully offline checks
-- [ ] Simple Flask/FastAPI web UI with client-side hashing
 
-## License
-MIT

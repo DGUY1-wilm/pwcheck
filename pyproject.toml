@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pwcheck"
-version = "0.1.0"
+dynamic = ["version"]  # single source of truth: __version__ in src/pwcheck/__init__.py
 description = "Password strength checker with HaveIBeenPwned k-anonymity breach lookup"
 readme = "README.md"
 requires-python = ">=3.10"  # 3.9 reached end-of-life in Oct 2025
@@ -25,12 +25,19 @@ security = [
     "bandit[sarif]==1.9.4",
     "pip-audit==2.10.1",
 ]
+# Release tooling (Stage 4): builds the wheel and sdist attached to GitHub Releases.
+release = [
+    "build==1.6.1",
+]
 
 [project.scripts]
 pwcheck = "pwcheck.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.dynamic]
+version = { attr = "pwcheck.__version__" }
 
 # ---------------------------------------------------------------- ruff
 [tool.ruff]

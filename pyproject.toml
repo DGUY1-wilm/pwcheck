@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=69"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,12 +7,18 @@ name = "pwcheck"
 version = "0.1.0"
 description = "Password strength checker with HaveIBeenPwned k-anonymity breach lookup"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"  # 3.9 reached end-of-life in Oct 2025
 license = { text = "MIT" }
 dependencies = []  # standard library only
 
 [project.optional-dependencies]
-dev = ["pytest"]
+# Exact pins = reproducible CI. Dependabot (Stage 5) will propose upgrades as PRs.
+dev = [
+    "pytest==9.2.0",
+    "pytest-cov==7.1.0",
+    "ruff==0.17.3",
+    "mypy==2.4.1",
+]
 
 [project.scripts]
 pwcheck = "pwcheck.cli:main"
@@ -20,5 +26,54 @@ pwcheck = "pwcheck.cli:main"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+# ---------------------------------------------------------------- ruff
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+# target-version is read from requires-python above
+
+[tool.ruff.lint]
+select = [
+    "E", "W",   # pycodestyle errors/warnings
+    "F",        # pyflakes: unused imports, undefined names
+    "I",        # isort: import ordering
+    "B",        # flake8-bugbear: likely bugs (mutable defaults, etc.)
+    "UP",       # pyupgrade: modern syntax for the target Python
+    "SIM",      # flake8-simplify
+    "S",        # flake8-bandit: security checks (Bandit itself runs in Stage 2)
+    "RUF",      # ruff-specific checks
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"]  # assert is how pytest works
+
+[tool.ruff.format]
+# defaults (Black-compatible); `ruff format --check` fails CI if files aren't formatted
+
+# ---------------------------------------------------------------- mypy
+[tool.mypy]
+strict = true  # small, stdlib-only codebase: no excuse not to be strict
+files = ["src"]
+pretty = true
+warn_unreachable = true
+
+# ---------------------------------------------------------------- pytest + coverage
 [tool.pytest.ini_options]
-pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = [
+    "-ra",                          # summary of skips/failures at the end
+    "--strict-markers",
+    "--cov=pwcheck",
+    "--cov-report=term-missing",    # shows which lines are not covered
+    "--cov-report=xml",             # coverage.xml, uploaded as a CI artifact
+]
+
+[tool.coverage.run]
+branch = true  # count both sides of every if/else, not just lines
+
+[tool.coverage.report]
+fail_under = 95  # actual is 100%; small buffer so a refactor isn't blocked by one line
+show_missing = true
+exclude_also = [
+    'if __name__ == "__main__":',
+]

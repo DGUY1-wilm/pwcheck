@@ -1,4 +1,5 @@
 """Command-line interface for pwcheck."""
+
 from __future__ import annotations
 
 import argparse
@@ -40,7 +41,10 @@ def main(argv: list[str] | None = None) -> int:
     result = analyze(password, wordlist)
 
     print(f"\nStrength : {_bar(result.score)} {result.label}")
-    print(f"Entropy  : {result.entropy_bits} bits (pool size {result.pool_size}, length {result.length})")
+    print(
+        f"Entropy  : {result.entropy_bits} bits "
+        f"(pool size {result.pool_size}, length {result.length})"
+    )
     print(f"Crack time (offline, fast hash): {result.crack_time}")
     for w in result.warnings:
         print(f"  ! {w}")
@@ -54,7 +58,9 @@ def main(argv: list[str] | None = None) -> int:
             print(f"\nBreach check: unavailable ({exc})")
         else:
             if count:
-                print(f"\nBreach check: PWNED, seen {count:,} times in known breaches. Do not use it.")
+                print(
+                    f"\nBreach check: PWNED, seen {count:,} times in known breaches. Do not use it."
+                )
                 exit_code = 2
             else:
                 print("\nBreach check: not found in known breaches.")

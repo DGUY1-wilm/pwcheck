@@ -1,6 +1,6 @@
 # pwcheck
 
-This is an in depth description of the pwcheck (password checker). See GETTING_STARTED for easy step by step tutorial to perform on your own machine. 
+This is an in depth description of the pwcheck (password checker). See other README for easy step by step tutorial to perform on your own machine. 
 A command-line password strength checker that scores passwords by **entropy** and checks whether they've appeared in known data breaches using the **HaveIBeenPwned k-anonymity API**, without ever sending your password (or its full hash) anywhere.
 
 Standard library only. No dependencies.
@@ -78,14 +78,19 @@ The `Add-Padding` header is enabled so response size can't hint at which bucket 
 - The attacker-speed assumption is a rough model, not a guarantee.
 - A malicious or compromised API endpoint could still observe your IP and the prefix.
 
-## Tests
+## Tests and quality checks
 
 ```bash
 pip install -e ".[dev]"
-pytest
+ruff check .          # lint (including security rules)
+ruff format --check . # formatting
+mypy                  # strict type checking
+pytest                # tests + branch coverage; fails below 95%
 ```
 
-Network calls are mocked via dependency injection (`pwned_count(pw, fetch=...)`), and a test asserts that only the 5-character prefix is ever passed to the fetcher.
+The same four checks run in GitHub Actions on every push and pull request (`.github/workflows/ci.yml`), on Python 3.10 and 3.14.
+
+Tests never touch the real API. `pwned_count` takes an injectable `fetch` function, and `fetch_range` is tested against a fake `urlopen`. Tests assert that only the 5-character prefix is ever sent, and that `fetch_range` rejects anything that isn't exactly 5 hex characters.
 
 ## Roadmap ideas
 - [ ] Dictionary-word and leetspeak detection (or integrate `zxcvbn`)

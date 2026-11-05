@@ -11,6 +11,7 @@ Method
 This is an *estimate*. It assumes characters are chosen uniformly at random,
 which humans rarely do, so the penalties and the breach check matter.
 """
+
 from __future__ import annotations
 
 import math
@@ -21,15 +22,37 @@ from dataclasses import dataclass, field
 # A tiny sample list for the demo. For real use, load a larger list
 # (e.g. the top 100k from SecLists) via `load_wordlist()`.
 COMMON_PASSWORDS = {
-    "password", "123456", "12345678", "123456789", "qwerty", "abc123",
-    "password1", "111111", "iloveyou", "admin", "letmein", "welcome",
-    "monkey", "dragon", "football", "baseball", "master", "sunshine",
-    "princess", "qwerty123", "1q2w3e4r", "passw0rd", "p@ssw0rd", "trustno1",
+    "password",
+    "123456",
+    "12345678",
+    "123456789",
+    "qwerty",
+    "abc123",
+    "password1",
+    "111111",
+    "iloveyou",
+    "admin",
+    "letmein",
+    "welcome",
+    "monkey",
+    "dragon",
+    "football",
+    "baseball",
+    "master",
+    "sunshine",
+    "princess",
+    "qwerty123",
+    "1q2w3e4r",
+    "passw0rd",
+    "p@ssw0rd",
+    "trustno1",
 }
 
 SEQUENCES = [
     string.ascii_lowercase,
-    "qwertyuiop", "asdfghjkl", "zxcvbnm",
+    "qwertyuiop",
+    "asdfghjkl",
+    "zxcvbnm",
     string.digits,
 ]
 
@@ -64,7 +87,7 @@ def pool_size(password: str) -> int:
         size += 26
     if re.search(r"\d", password):
         size += 10
-    if re.search(r"[%s]" % re.escape(string.punctuation), password):
+    if re.search(f"[{re.escape(string.punctuation)}]", password):
         size += len(string.punctuation)  # 32
     if re.search(r"[^\x00-\x7f]", password):
         size += 100  # rough allowance for non-ASCII characters
@@ -101,8 +124,13 @@ def _humanize(seconds: float) -> str:
     if seconds < 1:
         return "instantly"
     units = [
-        ("second", 60), ("minute", 60), ("hour", 24), ("day", 365),
-        ("year", 100), ("century", 10), ("millennium", 1000),
+        ("second", 60),
+        ("minute", 60),
+        ("hour", 24),
+        ("day", 365),
+        ("year", 100),
+        ("century", 10),
+        ("millennium", 1000),
     ]
     value = seconds
     for name, step in units:
@@ -156,7 +184,7 @@ def analyze(password: str, wordlist: set[str] | None = None) -> StrengthResult:
         warnings.append("Shorter than 12 characters; length matters most.")
 
     bits = max(bits, 0.0)
-    seconds = (2 ** bits) / 2 / GUESSES_PER_SECOND  # average case: half the space
+    seconds = (2**bits) / 2 / GUESSES_PER_SECOND  # average case: half the space
     score = _score(bits)
 
     return StrengthResult(

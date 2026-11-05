@@ -1,14 +1,14 @@
 # syntax=docker/dockerfile:1
 
-# Base image pinned by tag AND digest. The tag is for humans; the digest is what
-# Docker actually pulls, so the build can't silently change if the tag is moved.
-# Dependabot (Stage 5) opens a PR when a newer digest is published.
-ARG PYTHON_IMAGE=python:3.14.10-slim-trixie@sha256:af8a5aa14780025dbfbcfbc81bd8a91ebd87711dd5b0f48ed71090949dd7cb1d
+# Base image pinned by tag AND digest in both FROM lines. The tag is for humans;
+# the digest is what Docker actually pulls, so the build can't silently change if
+# the tag is moved. Dependabot opens a PR when a newer digest is published (it
+# reads FROM lines directly, which is why this isn't factored into an ARG).
 
 # ---------------------------------------------------------------- stage 1: build
 # Builds a wheel. Build tooling (setuptools, pip caches, source tree) stays in
 # this stage and never reaches the final image.
-FROM ${PYTHON_IMAGE} AS build
+FROM python:3.14.10-slim-trixie@sha256:af8a5aa14780025dbfbcfbc81bd8a91ebd87711dd5b0f48ed71090949dd7cb1d AS build
 
 WORKDIR /src
 COPY pyproject.toml README.md LICENSE ./
@@ -16,7 +16,7 @@ COPY src ./src
 RUN pip wheel --no-cache-dir --no-deps --wheel-dir /dist .
 
 # ---------------------------------------------------------------- stage 2: runtime
-FROM ${PYTHON_IMAGE} AS runtime
+FROM python:3.14.10-slim-trixie@sha256:af8a5aa14780025dbfbcfbc81bd8a91ebd87711dd5b0f48ed71090949dd7cb1d AS runtime
 
 LABEL org.opencontainers.image.title="pwcheck" \
       org.opencontainers.image.description="Password strength checker with HaveIBeenPwned k-anonymity breach lookup" \

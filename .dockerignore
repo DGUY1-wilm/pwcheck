@@ -1,0 +1,24 @@
+# Only pyproject.toml, README.md, LICENSE and src/ are needed to build the image.
+# Everything else is excluded so it can't leak into the image or bust the cache.
+.git
+.github
+.venv
+venv
+Claude outputs
+tests
+**/__pycache__
+**/*.pyc
+*.egg-info
+build
+dist
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.coverage
+.coverage.*
+coverage.xml
+htmlcov
+.gitleaks.toml
+GETTING_STARTED.md
+Dockerfile
+.dockerignore

@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=69"]
+requires = ["setuptools>=77"]  # 77+ understands SPDX license strings
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -8,7 +8,8 @@ version = "0.1.0"
 description = "Password strength checker with HaveIBeenPwned k-anonymity breach lookup"
 readme = "README.md"
 requires-python = ">=3.10"  # 3.9 reached end-of-life in Oct 2025
-license = { text = "MIT" }
+license = "MIT"
+license-files = ["LICENSE"]
 dependencies = []  # standard library only
 
 [project.optional-dependencies]

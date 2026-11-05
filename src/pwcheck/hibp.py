@@ -41,7 +41,9 @@ def fetch_range(prefix: str, timeout: float = 5.0) -> str:
     # Validate input before building a URL: only 5 hex characters may ever be sent.
     if not _PREFIX_RE.fullmatch(prefix):
         raise ValueError(f"prefix must be 5 hex characters, got {prefix!r}")
-    # API_URL is a hard-coded https:// constant, so file:// or custom schemes can't reach urlopen.
+    # Scanner exception (ruff S310 / Bandit B310): these rules warn that urlopen also accepts
+    # file:// and custom schemes. API_URL is a hard-coded https:// constant and the prefix is
+    # validated above, so no caller-controlled scheme or path can reach urlopen.
     req = urllib.request.Request(  # noqa: S310
         API_URL + prefix,
         headers={
@@ -51,7 +53,7 @@ def fetch_range(prefix: str, timeout: float = 5.0) -> str:
         },
     )
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310
+        with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310  # nosec B310
             body: bytes = resp.read()
             return body.decode("utf-8")
     except (urllib.error.URLError, TimeoutError) as exc:

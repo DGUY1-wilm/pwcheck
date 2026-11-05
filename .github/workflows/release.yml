@@ -27,16 +27,16 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0 # need history to check the tag is on main
           persist-credentials: false
 
-      - uses: actions/setup-python@v7
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.14"
-          cache: pip
-          cache-dependency-path: pyproject.toml
+          # No dependency cache in the release workflow: a cache written by an
+          # untrusted PR run could otherwise end up inside a published artifact.
 
       - name: Install
         run: pip install -e ".[dev]"
@@ -78,7 +78,7 @@ jobs:
     outputs:
       digest: ${{ steps.push.outputs.digest }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
@@ -94,10 +94,14 @@ jobs:
             echo "tags=$image:$version $image:$minor $image:latest $image:sha-${GITHUB_SHA::7}"
           } >> "$GITHUB_OUTPUT"
 
+      # Step outputs are passed through env vars, never pasted into the script
+      # with ${{ }}, so a crafted value can't turn into shell code.
       - name: Build image
+        env:
+          VERSION: ${{ steps.meta.outputs.version }}
         run: |
           docker build --pull \
-            --label "org.opencontainers.image.version=${{ steps.meta.outputs.version }}" \
+            --label "org.opencontainers.image.version=${VERSION}" \
             --label "org.opencontainers.image.revision=${GITHUB_SHA}" \
             --tag pwcheck:release .
 
@@ -122,19 +126,24 @@ jobs:
 
       - name: Push image
         id: push
+        env:
+          IMAGE: ${{ steps.meta.outputs.image }}
+          VERSION: ${{ steps.meta.outputs.version }}
+          TAGS: ${{ steps.meta.outputs.tags }}
         run: |
-          for tag in ${{ steps.meta.outputs.tags }}; do
+          read -r -a tags <<< "$TAGS"
+          for tag in "${tags[@]}"; do
             docker tag pwcheck:release "$tag"
             docker push --quiet "$tag"
           done
           # The digest identifies the exact image bytes, whichever tag is used.
           digest="$(docker inspect --format '{{index .RepoDigests 0}}' \
-                    "${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.version }}" | cut -d@ -f2)"
+                    "${IMAGE}:${VERSION}" | cut -d@ -f2)"
           echo "digest=$digest" >> "$GITHUB_OUTPUT"
           {
             echo "### Published image"
             echo '```'
-            for tag in ${{ steps.meta.outputs.tags }}; do echo "$tag"; done
+            printf '%s\n' "${tags[@]}"
             echo "digest: $digest"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
@@ -142,7 +151,7 @@ jobs:
       # Signed SLSA build provenance: proves this image was built by this
       # workflow, from this commit. Verify with `gh attestation verify`.
       - name: Attest build provenance
-        uses: actions/attest-build-provenance@v4
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
           subject-name: ${{ steps.meta.outputs.image }}
           subject-digest: ${{ steps.push.outputs.digest }}
@@ -160,18 +169,18 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: write # create the release and upload assets
-      id-token: write
-      attestations: write
+      id-token: write # OIDC identity for signing the provenance attestation
+      attestations: write # store the attestation
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - uses: actions/setup-python@v7
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.14"
-          cache: pip
-          cache-dependency-path: pyproject.toml
+          # No dependency cache in the release workflow: a cache written by an
+          # untrusted PR run could otherwise end up inside a published artifact.
 
       - name: Build wheel and sdist
         run: |
@@ -180,7 +189,7 @@ jobs:
           cd dist && sha256sum -- * > SHA256SUMS && cat SHA256SUMS
 
       - name: Attest build provenance (wheel + sdist)
-        uses: actions/attest-build-provenance@v4
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
           subject-path: "dist/*.whl, dist/*.tar.gz"
 

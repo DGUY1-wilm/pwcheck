@@ -24,6 +24,7 @@ dev = [
 security = [
     "bandit[sarif]==1.9.4",
     "pip-audit==2.10.1",
+    "zizmor==1.31.1",
 ]
 # Release tooling (Stage 4): builds the wheel and sdist attached to GitHub Releases.
 release = [

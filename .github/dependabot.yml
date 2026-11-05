@@ -52,6 +52,12 @@ updates:
       timezone: America/New_York
     cooldown:
       default-days: 7
+    # Only 3.14.x patches and new digests (security fixes for the same Python).
+    # A new Python minor version is a deliberate upgrade: the test matrix has to
+    # cover it first, so it's done by hand, not by a bot.
+    ignore:
+      - dependency-name: "python"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
     commit-message:
       prefix: "container"
     labels: ["dependencies", "docker"]

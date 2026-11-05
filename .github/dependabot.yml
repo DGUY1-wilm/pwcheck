@@ -55,3 +55,17 @@ updates:
     commit-message:
       prefix: "container"
     labels: ["dependencies", "docker"]
+
+  # Terraform provider version in infra/github (exact build pinned by .terraform.lock.hcl).
+  - package-ecosystem: terraform
+    directory: /infra/github
+    schedule:
+      interval: weekly
+      day: monday
+      time: "08:23"
+      timezone: America/New_York
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: "infra"
+    labels: ["dependencies", "terraform"]

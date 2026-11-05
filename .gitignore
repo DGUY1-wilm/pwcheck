@@ -13,3 +13,13 @@ htmlcov/
 
 # Files downloaded from Claude land here; never commit them
 Claude outputs/
+
+# Terraform (infra/github): local state and plans never go in git.
+# .terraform.lock.hcl IS committed: it pins provider checksums.
+.terraform/
+*.tfstate
+*.tfstate.*
+tfplan
+plan.txt
+plan.json
+crash.log

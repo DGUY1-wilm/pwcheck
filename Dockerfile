@@ -8,7 +8,7 @@
 # ---------------------------------------------------------------- stage 1: build
 # Builds a wheel. Build tooling (setuptools, pip caches, source tree) stays in
 # this stage and never reaches the final image.
-FROM python:3.14.10-slim-trixie@sha256:af8a5aa14780025dbfbcfbc81bd8a91ebd87711dd5b0f48ed71090949dd7cb1d AS build
+FROM python:3.14.10-slim-trixie@sha256:9aaa474097d094040649f2162a627c0049b408f52138d980916788d80f04802f AS build
 
 WORKDIR /src
 COPY pyproject.toml README.md LICENSE ./
@@ -16,7 +16,7 @@ COPY src ./src
 RUN pip wheel --no-cache-dir --no-deps --wheel-dir /dist .
 
 # ---------------------------------------------------------------- stage 2: runtime
-FROM python:3.14.10-slim-trixie@sha256:af8a5aa14780025dbfbcfbc81bd8a91ebd87711dd5b0f48ed71090949dd7cb1d AS runtime
+FROM python:3.14.10-slim-trixie@sha256:9aaa474097d094040649f2162a627c0049b408f52138d980916788d80f04802f AS runtime
 
 LABEL org.opencontainers.image.title="pwcheck" \
       org.opencontainers.image.description="Password strength checker with HaveIBeenPwned k-anonymity breach lookup" \
